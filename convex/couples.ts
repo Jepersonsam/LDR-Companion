@@ -218,3 +218,25 @@ export const getRecentLovePings = query({
     }));
   },
 });
+
+export const leaveCouple = mutation({
+  args: {
+    token: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { user, couple } = await requireAuthCouple(ctx, args.token);
+
+    if (couple.user1Id === user._id) {
+      // User 1 (space creator) dissolves the space
+      await ctx.db.delete(couple._id);
+    } else if (couple.user2Id === user._id) {
+      // User 2 leaves the space; revert couple to pending for User 1
+      await ctx.db.patch(couple._id, {
+        user2Id: undefined,
+        status: "pending",
+      });
+    }
+
+    return { success: true };
+  },
+});

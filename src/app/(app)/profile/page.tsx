@@ -13,6 +13,8 @@ import {
   Save,
   Sparkles,
   ShieldCheck,
+  HeartCrack,
+  AlertTriangle,
 } from "lucide-react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
@@ -24,16 +26,20 @@ import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { formatDate } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
 
 export default function ProfilePage() {
   const { user, couple, token, logout, isLoading } = useAuth();
+  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState(user?.name || "");
   const [startDate, setStartDate] = useState(couple?.startDate || "");
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isUpdatingDate, setIsUpdatingDate] = useState(false);
+  const [isLeavingCouple, setIsLeavingCouple] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [copied, setCopied] = useState(false);
   const [profileMsg, setProfileMsg] = useState("");
   const [dateMsg, setDateMsg] = useState("");
@@ -43,6 +49,21 @@ export default function ProfilePage() {
     api.users.generateAvatarUploadUrl
   );
   const updateStartDateMutation = useMutation(api.couples.updateStartDate);
+  const leaveCoupleMutation = useMutation(api.couples.leaveCouple);
+
+  const handleLeaveCouple = async () => {
+    if (!token) return;
+    setIsLeavingCouple(true);
+    try {
+      await leaveCoupleMutation({ token });
+      setShowLeaveConfirm(false);
+      router.push("/onboarding");
+    } catch (err: any) {
+      alert(err.message || "Gagal keluar dari ruang hubungan.");
+    } finally {
+      setIsLeavingCouple(false);
+    }
+  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -329,8 +350,38 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
+          {/* Danger Zone: Leave / Unlink Couple Card */}
+          <Card variant="glass" padding="md" className="border-red-300 dark:border-red-900/60 bg-red-50/40 dark:bg-red-950/20">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400">
+                  <HeartCrack className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-bold text-red-600 dark:text-red-400">
+                    Keluar dari Ruang Hubungan
+                  </h4>
+                  <p className="text-xs text-stone-600 dark:text-stone-300 mt-0.5">
+                    Memutuskan hubungan pasangan dari ruang ini. Anda akan kembali ke halaman awal (onboarding).
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                onClick={() => setShowLeaveConfirm(true)}
+                variant="outline"
+                size="sm"
+                className="w-full border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-100/50 dark:hover:bg-red-950/50 gap-2"
+              >
+                <HeartCrack className="h-4 w-4" />
+                <span>Putuskan / Keluar dari Pasangan</span>
+              </Button>
+            </div>
+          </Card>
+
           {/* Logout Action Card */}
-          <Card variant="solid" padding="md" className="border-red-200 dark:border-red-950">
+          <Card variant="solid" padding="md" className="border-stone-200 dark:border-stone-800">
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="text-sm font-bold text-stone-900 dark:text-stone-100">
@@ -354,6 +405,49 @@ export default function ProfilePage() {
           </Card>
         </div>
       </div>
+
+      {/* Confirmation Modal for Leaving Couple Space */}
+      {showLeaveConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-2xl border border-red-200 dark:border-red-900/60 animate-in zoom-in-95 duration-200">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400 mx-auto mb-4">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+
+            <h3 className="text-lg font-bold text-center text-stone-900 dark:text-white">
+              Keluar dari Ruang Hubungan?
+            </h3>
+            <p className="mt-2 text-xs text-center text-stone-500 dark:text-stone-400 leading-relaxed">
+              Tindakan ini akan memisahkan akun Anda dari <strong className="text-stone-900 dark:text-white">{partnerName}</strong>. Ruang chat, jurnal bersama, dan video call akan terputus. Anda akan diarahkan ke halaman onboarding untuk membuat atau bergabung ke ruang baru.
+            </p>
+
+            <div className="mt-6 flex items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                disabled={isLeavingCouple}
+                onClick={() => setShowLeaveConfirm(false)}
+                className="flex-1"
+              >
+                Batal
+              </Button>
+
+              <Button
+                type="button"
+                variant="danger"
+                size="md"
+                isLoading={isLeavingCouple}
+                onClick={handleLeaveCouple}
+                className="flex-1 gap-1.5"
+              >
+                <HeartCrack className="h-4 w-4" />
+                <span>Ya, Keluar</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
