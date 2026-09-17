@@ -110,6 +110,25 @@ body {
   animation: float-heart 2.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
+@keyframes floating-heart {
+  0% {
+    transform: translateY(0) scale(0.6);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translateY(-30vh) scale(1.2) rotate(12deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-70vh) scale(1.5) rotate(-15deg);
+    opacity: 0;
+  }
+}
+
+.animate-floating-heart {
+  animation: floating-heart 2.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
 @keyframes pulse-subtle {
   0%, 100% {
     transform: scale(1);

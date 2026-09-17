@@ -111,4 +111,36 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_couple", ["coupleId", "createdAt"]),
+
+  calls: defineTable({
+    coupleId: v.id("couples"),
+    callerId: v.id("users"),
+    receiverId: v.id("users"),
+    status: v.union(
+      v.literal("ringing"),
+      v.literal("ongoing"),
+      v.literal("ended"),
+      v.literal("declined"),
+      v.literal("missed")
+    ),
+    createdAt: v.number(),
+    startedAt: v.optional(v.number()),
+    endedAt: v.optional(v.number()),
+  })
+    .index("by_couple", ["coupleId"])
+    .index("by_couple_status", ["coupleId", "status"]),
+
+  callSignals: defineTable({
+    callId: v.id("calls"),
+    senderId: v.id("users"),
+    type: v.union(
+      v.literal("offer"),
+      v.literal("answer"),
+      v.literal("candidate"),
+      v.literal("heart_reaction")
+    ),
+    payload: v.string(), // JSON encoded SDP or candidate or reaction
+    createdAt: v.number(),
+  })
+    .index("by_call", ["callId", "createdAt"]),
 });

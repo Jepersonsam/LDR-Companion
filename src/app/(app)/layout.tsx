@@ -8,6 +8,8 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 
+import { CallProvider } from "@/components/providers/CallProvider";
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -28,17 +30,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-stone-50/50 dark:bg-[#120a0f]">
-      <Navbar />
+    <CallProvider>
+      <div className="min-h-screen flex flex-col bg-stone-50/50 dark:bg-[#120a0f]">
+        <Navbar />
 
-      <div className="flex-1 flex max-w-7xl w-full mx-auto">
-        <Sidebar />
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 pb-24 lg:pb-8 overflow-y-auto">
-          {children}
-        </main>
+        <div className="flex-1 flex max-w-7xl w-full mx-auto">
+          <Sidebar />
+          <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 pb-24 lg:pb-8 overflow-y-auto">
+            {children}
+          </main>
+        </div>
+
+        <MobileBottomNav />
       </div>
-
-      <MobileBottomNav />
-    </div>
+    </CallProvider>
   );
 }

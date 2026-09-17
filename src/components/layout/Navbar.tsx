@@ -2,8 +2,9 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Heart, Send, Sparkles, LogOut, User, Compass } from "lucide-react";
+import { Heart, Send, Sparkles, LogOut, User, Compass, Video } from "lucide-react";
 import { useAuth } from "@/components/providers/ConvexClientProvider";
+import { useCall } from "@/components/providers/CallProvider";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { useMutation } from "convex/react";
@@ -12,6 +13,7 @@ import confetti from "canvas-confetti";
 
 export function Navbar() {
   const { user, couple, token, logout } = useAuth();
+  const { startCall } = useCall();
   const [showDropdown, setShowDropdown] = useState(false);
   const [isSendingLove, setIsSendingLove] = useState(false);
   const sendLovePing = useMutation(api.couples.sendLovePing);
@@ -67,18 +69,30 @@ export function Navbar() {
         </Link>
 
         {/* Action Buttons & Profile */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {couple && couple.status === "active" && (
-            <Button
-              variant="romantic"
-              size="sm"
-              onClick={handleSendHeart}
-              isLoading={isSendingLove}
-              className="hidden sm:inline-flex shadow-rose-500/20"
-            >
-              <Heart className="h-4 w-4 fill-white" />
-              <span>Kirim Heart</span>
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={startCall}
+                className="inline-flex items-center gap-1.5 border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950/50"
+              >
+                <Video className="h-4 w-4" />
+                <span className="hidden sm:inline">Video Call</span>
+              </Button>
+
+              <Button
+                variant="romantic"
+                size="sm"
+                onClick={handleSendHeart}
+                isLoading={isSendingLove}
+                className="hidden sm:inline-flex shadow-rose-500/20"
+              >
+                <Heart className="h-4 w-4 fill-white" />
+                <span>Kirim Heart</span>
+              </Button>
+            </>
           )}
 
           {/* User Menu */}

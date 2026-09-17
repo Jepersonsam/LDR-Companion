@@ -9,10 +9,12 @@ import {
   Sparkles,
   MessageCircleHeart,
   Image as ImageIcon,
+  Video,
 } from "lucide-react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { useAuth } from "@/components/providers/ConvexClientProvider";
+import { useCall } from "@/components/providers/CallProvider";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -23,6 +25,7 @@ const QUICK_EMOJIS = ["❤️", "🥰", "🥺", "😘", "✨", "🫂", "💕", "
 
 export default function ChatPage() {
   const { user, couple, token, isLoading } = useAuth();
+  const { startCall } = useCall();
   const [content, setContent] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -117,16 +120,30 @@ export default function ChatPage() {
           </div>
         </div>
 
-        <div className="hidden sm:flex items-center gap-1">
-          {QUICK_EMOJIS.slice(0, 5).map((emoji) => (
-            <button
-              key={emoji}
-              onClick={() => handleQuickEmoji(emoji)}
-              className="h-8 w-8 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-950/60 flex items-center justify-center text-base transition-transform hover:scale-125 cursor-pointer"
-            >
-              {emoji}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          {/* Quick Emojis */}
+          <div className="hidden sm:flex items-center gap-1">
+            {QUICK_EMOJIS.slice(0, 4).map((emoji) => (
+              <button
+                key={emoji}
+                onClick={() => handleQuickEmoji(emoji)}
+                className="h-8 w-8 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-950/60 flex items-center justify-center text-base transition-transform hover:scale-125 cursor-pointer"
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+
+          {/* Video Call Button */}
+          <Button
+            variant="romantic"
+            size="sm"
+            onClick={startCall}
+            className="flex items-center gap-1.5 shadow-rose-500/20"
+          >
+            <Video className="h-4 w-4" />
+            <span className="hidden xs:inline">Video Call</span>
+          </Button>
         </div>
       </div>
 
