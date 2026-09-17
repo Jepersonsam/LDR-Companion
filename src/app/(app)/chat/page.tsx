@@ -252,23 +252,26 @@ export default function ChatPage() {
       {/* Chat Input Bar */}
       <form
         onSubmit={handleSendMessage}
-        className="p-3 sm:p-4 glass-panel border-t border-rose-200/60 dark:border-rose-950/60 flex items-center gap-2 shrink-0"
+        className="p-2.5 sm:p-4 glass-panel border-t border-rose-200/60 dark:border-rose-950/60 flex items-center gap-2 shrink-0 w-full"
       >
         <button
           type="button"
           onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-          className="p-2.5 rounded-xl text-stone-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
+          className="shrink-0 p-2 sm:p-2.5 rounded-xl text-stone-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
+          title="Pilih Emoji"
         >
           <Smile className="h-5 w-5" />
         </button>
 
-        <input
-          type="text"
-          placeholder={`Kirim pesan untuk ${partnerName}...`}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          className="flex-1 rounded-xl border border-rose-200/80 dark:border-rose-900/60 bg-white/80 dark:bg-stone-900/80 px-4 py-2.5 text-sm text-stone-900 dark:text-white placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-rose-400/30"
-        />
+        <div className="flex-1 min-w-0 relative flex items-center rounded-2xl border border-rose-200/80 dark:border-rose-900/60 bg-white/90 dark:bg-stone-900/90 shadow-inner focus-within:ring-2 focus-within:ring-rose-400/40 focus-within:border-rose-400 transition-all">
+          <input
+            type="text"
+            placeholder={`Kirim pesan untuk ${partnerName}...`}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="w-full min-w-0 bg-transparent px-3.5 py-2.5 text-sm text-stone-900 dark:text-white placeholder:text-stone-400 focus:outline-none"
+          />
+        </div>
 
         <Button
           type="submit"
@@ -276,7 +279,8 @@ export default function ChatPage() {
           size="icon"
           isLoading={isSending}
           disabled={!content.trim()}
-          className="shrink-0 h-10 w-10 rounded-xl"
+          className="shrink-0 h-10 w-10 sm:h-10 sm:w-10 rounded-2xl shadow-md shadow-rose-500/20 active:scale-95 transition-transform"
+          title="Kirim Pesan"
         >
           <Send className="h-4 w-4" />
         </Button>
