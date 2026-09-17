@@ -1,12 +1,30 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ConvexClientProvider } from "@/components/providers/ConvexClientProvider";
 import { LovePingNotification } from "@/components/layout/LovePingNotification";
 
+export const viewport: Viewport = {
+  themeColor: "#e11d48",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export const metadata: Metadata = {
   title: "LDR Companion - Tetap dekat, meskipun berjauhan",
   description:
-    "Ruang digital pribadi untuk dua orang yang sedang menjalani hubungan jarak jauh. Shared journal, memories, mood tracker, meeting countdown, dan realtime chat.",
+    "Ruang digital pribadi untuk dua orang yang sedang menjalani hubungan jarak jauh. Shared journal, memories, mood tracker, meeting countdown, video call, dan realtime chat.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "LDR Companion",
+  },
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
