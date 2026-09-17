@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ConvexClientProvider } from "@/components/providers/ConvexClientProvider";
-import { LovePingNotification } from "@/components/layout/LovePingNotification";
+import { GlobalNotificationManager } from "@/components/layout/GlobalNotificationManager";
 
 export const viewport: Viewport = {
   themeColor: "#e11d48",
@@ -37,7 +37,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col antialiased selection:bg-rose-200 selection:text-rose-900 dark:selection:bg-rose-900 dark:selection:text-rose-100">
         <ConvexClientProvider>
           {children}
-          <LovePingNotification />
+          <GlobalNotificationManager />
         </ConvexClientProvider>
       </body>
     </html>
