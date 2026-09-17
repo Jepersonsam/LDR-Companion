@@ -31,18 +31,76 @@ export default function ChatPage() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const messages = useQuery(
     api.messages.listMessages,
     token ? { token, limit: 100 } : "skip"
   );
 
+  const partnerPresence = useQuery(
+    api.messages.getPartnerPresence,
+    token ? { token } : "skip"
+  );
+
   const sendMessageMutation = useMutation(api.messages.sendMessage);
   const deleteMessageMutation = useMutation(api.messages.deleteMessage);
+  const updatePresenceMutation = useMutation(api.messages.updatePresence);
 
+  // Auto scroll to bottom when new message arrives or partner types
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, partnerPresence?.isTyping]);
+
+  // Presence lifecycle & heartbeat
+  useEffect(() => {
+    if (!token) return;
+
+    // Set active in-chat on mount
+    updatePresenceMutation({ token, inChat: true, isTyping: false }).catch(() => {});
+
+    // Heartbeat every 10 seconds
+    const interval = setInterval(() => {
+      updatePresenceMutation({
+        token,
+        inChat: true,
+        isTyping: !!typingTimeoutRef.current,
+      }).catch(() => {});
+    }, 10000);
+
+    return () => {
+      clearInterval(interval);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      updatePresenceMutation({ token, inChat: false, isTyping: false }).catch(() => {});
+    };
+  }, [token, updatePresenceMutation]);
+
+  // Handle typing status as user types
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setContent(value);
+
+    if (!token) return;
+
+    if (value.trim().length > 0) {
+      updatePresenceMutation({ token, inChat: true, isTyping: true }).catch(() => {});
+
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      typingTimeoutRef.current = setTimeout(() => {
+        updatePresenceMutation({ token, inChat: true, isTyping: false }).catch(() => {});
+        typingTimeoutRef.current = null;
+      }, 2500);
+    } else {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+      updatePresenceMutation({ token, inChat: true, isTyping: false }).catch(() => {});
+    }
+  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +109,12 @@ export default function ChatPage() {
     const textToSend = content.trim();
     setContent("");
     setIsSending(true);
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
+    updatePresenceMutation({ token, inChat: true, isTyping: false }).catch(() => {});
 
     try {
       await sendMessageMutation({
@@ -96,26 +160,46 @@ export default function ChatPage() {
   }
 
   const partnerName = couple.partner?.name ?? "Partner";
+  const isPartnerInChat = partnerPresence?.inChat;
+  const isPartnerTyping = partnerPresence?.isTyping;
 
   return (
     <div className="flex flex-col h-[calc(100vh-8.5rem)] lg:h-[calc(100vh-6.5rem)] max-w-4xl mx-auto glass-card rounded-3xl overflow-hidden border border-rose-200/80 dark:border-rose-950/80 shadow-2xl shadow-rose-500/5">
       {/* Chat Room Header */}
       <div className="flex items-center justify-between px-6 py-4 glass-panel border-b border-rose-200/60 dark:border-rose-950/60 shrink-0">
         <div className="flex items-center gap-3">
-          <Avatar
-            name={partnerName}
-            src={couple.partner?.avatarUrl}
-            size="md"
-            ring
-          />
+          <div className="relative">
+            <Avatar
+              name={partnerName}
+              src={couple.partner?.avatarUrl}
+              size="md"
+              ring
+            />
+            {isPartnerInChat && (
+              <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-stone-900 animate-pulse" />
+            )}
+          </div>
           <div>
             <h2 className="text-base font-extrabold text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
               <span>{partnerName}</span>
               <Heart className="h-3.5 w-3.5 text-rose-500 fill-rose-500" />
             </h2>
             <div className="flex items-center gap-1.5 text-xs text-stone-500 dark:text-stone-400">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Ruang Chat Pribadi Berdua</span>
+              {isPartnerTyping ? (
+                <span className="text-rose-500 font-bold animate-pulse flex items-center gap-1">
+                  <span>sedang mengetik...</span>
+                </span>
+              ) : isPartnerInChat ? (
+                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Sedang di ruang chat</span>
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-stone-400">
+                  <span className="h-2 w-2 rounded-full bg-stone-300 dark:bg-stone-600" />
+                  <span>Tidak di ruang chat</span>
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -228,6 +312,28 @@ export default function ChatPage() {
             </p>
           </div>
         )}
+
+        {/* Real-time Typing Bubble from Partner */}
+        {isPartnerTyping && (
+          <div className="flex items-end gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <div className="w-7 shrink-0">
+              <Avatar
+                name={partnerName}
+                src={couple.partner?.avatarUrl}
+                size="xs"
+              />
+            </div>
+            <div className="bg-white/95 dark:bg-stone-800/95 rounded-2xl rounded-bl-none px-4 py-2.5 shadow-sm border border-rose-100 dark:border-rose-900/40 flex items-center gap-1.5">
+              <span className="text-xs text-stone-500 dark:text-stone-400 mr-1 font-medium">
+                {partnerName} sedang mengetik
+              </span>
+              <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-bounce [animation-delay:-0.3s]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-bounce [animation-delay:-0.15s]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-bounce" />
+            </div>
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 
@@ -268,7 +374,7 @@ export default function ChatPage() {
             type="text"
             placeholder={`Kirim pesan untuk ${partnerName}...`}
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={handleInputChange}
             className="w-full min-w-0 bg-transparent px-3.5 py-2.5 text-sm text-stone-900 dark:text-white placeholder:text-stone-400 focus:outline-none"
           />
         </div>

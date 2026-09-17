@@ -143,4 +143,14 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_call", ["callId", "createdAt"]),
+
+  chatPresence: defineTable({
+    coupleId: v.id("couples"),
+    userId: v.id("users"),
+    inChat: v.boolean(),
+    isTyping: v.boolean(),
+    lastActive: v.number(),
+  })
+    .index("by_couple", ["coupleId"])
+    .index("by_couple_user", ["coupleId", "userId"]),
 });

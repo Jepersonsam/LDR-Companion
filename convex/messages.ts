@@ -95,3 +95,76 @@ export const deleteMessage = mutation({
     return { success: true };
   },
 });
+
+export const updatePresence = mutation({
+  args: {
+    token: v.string(),
+    inChat: v.boolean(),
+    isTyping: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const auth = await getAuthCouple(ctx, args.token);
+    if (!auth) return { success: false };
+    const { user, couple } = auth;
+
+    const existing = await ctx.db
+      .query("chatPresence")
+      .withIndex("by_couple_user", (q) =>
+        q.eq("coupleId", couple._id).eq("userId", user._id)
+      )
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        inChat: args.inChat,
+        isTyping: args.isTyping,
+        lastActive: Date.now(),
+      });
+    } else {
+      await ctx.db.insert("chatPresence", {
+        coupleId: couple._id,
+        userId: user._id,
+        inChat: args.inChat,
+        isTyping: args.isTyping,
+        lastActive: Date.now(),
+      });
+    }
+
+    return { success: true };
+  },
+});
+
+export const getPartnerPresence = query({
+  args: {
+    token: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    if (!args.token) return null;
+    const auth = await getAuthCouple(ctx, args.token);
+    if (!auth || !auth.partnerId) return null;
+    const { couple, partnerId } = auth;
+
+    const presence = await ctx.db
+      .query("chatPresence")
+      .withIndex("by_couple_user", (q) =>
+        q.eq("coupleId", couple._id).eq("userId", partnerId)
+      )
+      .first();
+
+    if (!presence) {
+      return { inChat: false, isTyping: false, lastActive: 0 };
+    }
+
+    const now = Date.now();
+    // Typing is active if within last 5 seconds
+    const isTyping = presence.isTyping && now - presence.lastActive < 5000;
+    // In chat is active if within last 25 seconds
+    const inChat = presence.inChat && now - presence.lastActive < 25000;
+
+    return {
+      inChat,
+      isTyping,
+      lastActive: presence.lastActive,
+    };
+  },
+});
