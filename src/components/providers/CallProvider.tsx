@@ -19,11 +19,19 @@ const CallContext = createContext<CallContextType>({
 
 export function CallProvider({ children }: { children: ReactNode }) {
   const { token, couple } = useAuth();
+  const [dismissedCallId, setDismissedCallId] = React.useState<string | null>(null);
 
   const activeCall = useQuery(
     api.calls.getActiveCall,
     token ? { token } : "skip"
   );
+
+  // Clear dismissed state when no active call exists
+  React.useEffect(() => {
+    if (!activeCall) {
+      setDismissedCallId(null);
+    }
+  }, [activeCall]);
 
   const initiateCallMutation = useMutation(api.calls.initiateCall);
   const acceptCallMutation = useMutation(api.calls.acceptCall);
@@ -32,6 +40,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
 
   const startCall = async () => {
     if (!token || !couple || couple.status !== "active") return;
+    setDismissedCallId(null);
     try {
       await initiateCallMutation({ token });
     } catch (err: any) {
@@ -53,6 +62,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
 
   const handleDecline = async () => {
     if (!token || !activeCall) return;
+    setDismissedCallId(activeCall._id);
     try {
       await declineCallMutation({
         token,
@@ -65,21 +75,23 @@ export function CallProvider({ children }: { children: ReactNode }) {
 
   const handleEndCall = async () => {
     if (!token || !activeCall) return;
+    const callIdToEnd = activeCall._id;
+    setDismissedCallId(callIdToEnd);
     try {
       await endCallMutation({
         token,
-        callId: activeCall._id,
+        callId: callIdToEnd,
       });
     } catch (err) {
       console.error("Failed to end call", err);
     }
   };
 
-  const isCallActive = !!activeCall;
+  const isCallActive = !!activeCall && activeCall._id !== dismissedCallId;
   const showIncomingModal =
-    activeCall && activeCall.status === "ringing" && !activeCall.isCaller;
+    isCallActive && activeCall.status === "ringing" && !activeCall.isCaller;
   const showVideoModal =
-    activeCall &&
+    isCallActive &&
     (activeCall.status === "ongoing" ||
       (activeCall.status === "ringing" && activeCall.isCaller));
 

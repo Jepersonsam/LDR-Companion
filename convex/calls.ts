@@ -78,10 +78,11 @@ export const declineCall = mutation({
     callId: v.id("calls"),
   },
   handler: async (ctx, args) => {
-    const { couple } = await requireAuthCouple(ctx, args.token);
+    const auth = await getAuthCouple(ctx, args.token);
+    if (!auth) return { success: false };
     const call = await ctx.db.get(args.callId);
 
-    if (!call || call.coupleId !== couple._id) {
+    if (!call || call.coupleId !== auth.couple._id) {
       return { success: false };
     }
 
@@ -100,10 +101,11 @@ export const endCall = mutation({
     callId: v.id("calls"),
   },
   handler: async (ctx, args) => {
-    const { couple } = await requireAuthCouple(ctx, args.token);
+    const auth = await getAuthCouple(ctx, args.token);
+    if (!auth) return { success: false };
     const call = await ctx.db.get(args.callId);
 
-    if (!call || call.coupleId !== couple._id) {
+    if (!call || call.coupleId !== auth.couple._id) {
       return { success: false };
     }
 
